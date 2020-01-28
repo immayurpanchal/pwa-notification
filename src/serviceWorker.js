@@ -34,6 +34,61 @@ export function register(config) {
       return;
     }
 
+    window.addEventListener('push', e => {
+      console.log('push event listerner called');
+      // navigator.serviceWorker.getRegistration().then(reg => {
+      //   // TODO 2.4 - Add 'options' object to configure the notification
+      //   const options = {
+      //     body: 'First notification!',
+      //     icon: 'images/notification-flat.png',
+      //     vibrate: [100, 50, 100],
+      //     data: {
+      //       dateOfArrival: Date.now(),
+      //       primaryKey: 1
+      //     },
+      //     // TODO 2.5 - add actions to the notification
+      //     actions: [
+      //       {
+      //         action: 'explore',
+      //         title: 'Go to the site',
+      //         icon: 'images/checkmark.png'
+      //       },
+      //       {
+      //         action: 'close',
+      //         title: 'Close the notification',
+      //         icon: 'images/xmark.png'
+      //       }
+      //     ]
+      //     // TODO 5.1 - add a tag to the notification
+      //   };
+
+      //   reg.showNotification('Hello world!', options);
+      // });
+      var options = {
+        body: 'This notification was generated from a push!',
+        icon: 'images/example.png',
+        vibrate: [100, 50, 100],
+        data: {
+          dateOfArrival: Date.now(),
+          primaryKey: '2'
+        },
+        actions: [
+          {
+            action: 'explore',
+            title: 'Explore this new world',
+            icon: 'images/checkmark.png'
+          },
+          { action: 'close', title: 'Close', icon: 'images/xmark.png' }
+        ]
+      };
+      e.waitUntil(
+        window.navigator.serviceWorker.getRegistration().then(reg => {
+          reg.showNotification('Hello World', options);
+        })
+      );
+      // e.waitUntil(self.registration.showNotification('Hello world!', options));
+    });
+
     window.addEventListener('load', () => {
       const swUrl = `${process.env.PUBLIC_URL}/service-worker.js`;
 
@@ -58,7 +113,6 @@ export function register(config) {
 }
 
 function registerValidSW(swUrl, config) {
-  console.log('resgisterd');
   navigator.serviceWorker
     .register(swUrl, { scope: '/' })
     .then(registration => {
@@ -96,6 +150,66 @@ function registerValidSW(swUrl, config) {
           }
         };
       };
+
+      // TODO 2.1 - check for notification support
+      if (!('Notification' in window)) {
+        console.log('This browser does not support notifications!');
+        return;
+      }
+
+      // TODO 2.2 - request permission to show notifications
+      Notification.requestPermission(status => {
+        console.log('Notification permission status:', status);
+        if (Notification.permission === 'granted') {
+          subscribe();
+          // displayNotification();
+        }
+      });
+
+      const subscribe = async () => {
+        const sw = await window.navigator.serviceWorker.ready;
+        //ApplicationServerKey is created from web-push package
+        const push = await sw.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey:
+            'BLijwO21fuI9hOQbL_O2GMzQtbGilclWGSB3XUWJ-Qew2t_IflL9a-r9WjvQxMgh39RmKu3ZwFNOE8CK6vCm3qo'
+        });
+        console.log(JSON.stringify(push));
+      };
+
+      function displayNotification() {
+        // TODO 2.3 - display a Notification
+        if (Notification.permission === 'granted') {
+          navigator.serviceWorker.getRegistration().then(reg => {
+            // TODO 2.4 - Add 'options' object to configure the notification
+            const options = {
+              body: 'First notification!',
+              icon: 'images/notification-flat.png',
+              vibrate: [100, 50, 100],
+              data: {
+                dateOfArrival: Date.now(),
+                primaryKey: 1
+              },
+              // TODO 2.5 - add actions to the notification
+              actions: [
+                {
+                  action: 'explore',
+                  title: 'Go to the site',
+                  icon: 'images/checkmark.png'
+                },
+                {
+                  action: 'close',
+                  title: 'Close the notification',
+                  icon: 'images/xmark.png'
+                }
+              ]
+              // TODO 5.1 - add a tag to the notification
+            };
+
+            reg.showNotification('Hello world!', options);
+          });
+        }
+      }
     })
     .catch(error => {
       console.error('Error during service worker registration:', error);
